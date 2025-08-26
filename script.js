@@ -1,14 +1,21 @@
+// Load bills and products from localStorage
 let bills = JSON.parse(localStorage.getItem("bills") || "[]");
 let productListArr = JSON.parse(localStorage.getItem("products") || "[]");
+
+// Ensure product list persists even after refresh
+if (!Array.isArray(productListArr)) productListArr = [];
+if (!Array.isArray(bills)) bills = [];
 
 const btn = document.querySelector("button[onclick='addBill()']") || document.getElementById("addBillBtn") || document.querySelector("button");
 let currentEditIndex = null;
 
+// Toggle Add Product Section
 function toggleAddProduct() {
   const sec = document.getElementById('addProductSection');
   sec.style.display = sec.style.display === 'none' || !sec.style.display ? 'block' : 'none';
 }
 
+// Add Product to localStorage
 function addProduct() {
   const name = document.getElementById('newProductName').value.trim();
   const price = parseFloat(document.getElementById('newProductPrice').value);
@@ -18,15 +25,9 @@ function addProduct() {
     return;
   }
 
-  const existingProduct = productListArr.find(p => p.name.toLowerCase() === name.toLowerCase() && p.price === price);
+  const existingProduct = productListArr.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existingProduct) {
-    alert('Product with same name and price already exists');
-    return;
-  }
-
-  const existingProductWithName = productListArr.find(p => p.name.toLowerCase() === name.toLowerCase());
-  if (existingProductWithName) {
-    existingProductWithName.price = price;
+    existingProduct.price = price;
     alert('Product price updated');
   } else {
     productListArr.push({ name, price });
@@ -34,7 +35,6 @@ function addProduct() {
   }
 
   localStorage.setItem("products", JSON.stringify(productListArr));
-
   document.getElementById('newProductName').value = '';
   document.getElementById('newProductPrice').value = '';
   renderProductList();
@@ -42,10 +42,12 @@ function addProduct() {
   toggleAddProduct();
 }
 
+// Render product list on UI
 function renderProductList() {
   const listEl = document.getElementById('productList');
+  if (!listEl) return;
   listEl.innerHTML = '';
-  productListArr.forEach((prod, idx) => {
+  productListArr.forEach(prod => {
     const div = document.createElement('div');
     div.className = 'product-item';
     div.textContent = `${prod.name} — ₹${prod.price.toFixed(2)}`;
@@ -59,8 +61,10 @@ function renderProductList() {
   });
 }
 
+// Fill product dropdown
 function populateProductSelect() {
   const select = document.getElementById('productName');
+  if (!select) return;
   const currentValue = select.value;
   select.innerHTML = '<option value="" disabled selected>Choose a product</option>';
   productListArr.forEach(prod => {
@@ -74,17 +78,15 @@ function populateProductSelect() {
   }
 }
 
+// When product is selected, fill price
 function onProductSelect() {
   const select = document.getElementById('productName');
   const selectedName = select.value;
   const product = productListArr.find(p => p.name === selectedName);
-  if (product) {
-    document.getElementById('productPrice').value = product.price;
-  } else {
-    document.getElementById('productPrice').value = '';
-  }
+  document.getElementById('productPrice').value = product ? product.price : '';
 }
 
+// Button click to generate/save bill
 btn.addEventListener("click", async () => {
   btn.disabled = true;
   btn.textContent = currentEditIndex === null ? "⏳ Generating..." : "⏳ Saving...";
@@ -93,6 +95,7 @@ btn.addEventListener("click", async () => {
   btn.textContent = "💾 Generate & Download PDF";
 });
 
+// Add bill logic
 async function addBill(editIndex = null) {
   const name = document.getElementById("customerName").value.trim();
   const phone = document.getElementById("customerPhone").value.trim();
@@ -103,7 +106,7 @@ async function addBill(editIndex = null) {
   const discount = parseFloat(document.getElementById("productDiscount").value) || 0;
   const total = (qty * price) - discount;
 
-  if (!name || !product || isNaN(qty) || isNaN(price) || isNaN(discount)) {
+  if (!name || !product || isNaN(qty) || isNaN(price)) {
     alert("Please fill all required fields with valid values.");
     return;
   }
@@ -115,110 +118,12 @@ async function addBill(editIndex = null) {
   localStorage.setItem("bills", JSON.stringify(bills));
   updateTable();
   updateCustomerSuggestions();
-
-  await new Promise(resolve => setTimeout(resolve, 300));
   await generatePDF(bill);
-
   clearForm();
   currentEditIndex = null;
 }
 
-function formatINR(amount) {
-  return `₹${amount.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`;
-}
-
-function generatePDF(bill) {
-  return new Promise((resolve) => {
-    const docDefinition = {
-      pageMargins: [40, 60, 40, 60],
-      content: [
-        { text: 'Pro shop bill', style: 'header', alignment: 'right' },
-        {
-          text: 'Shop Name:PRO SHOP\nShop Address:2/70 big street, Zip Code:631052\nPhone Number:789456781',
-          style: 'subheader'
-        },
-        { text: '\nBill To:', style: 'subheader' },
-        `Name: ${bill.name}`,
-        `Phone: ${bill.phone}`,
-        `Address: ${bill.address}`,
-        {
-          columns: [
-            { width: '*', text: '' },
-            [
-              { text: `Bill Date: ${new Date().toISOString().split("T")[0]}`, alignment: 'right' },
-              { text: `Total: ${formatINR(bill.total)}`, bold: true, alignment: 'right' }
-            ]
-          ],
-          columnGap: 10,
-          margin: [0, 15, 0, 15]
-        },
-        {
-          table: {
-            headerRows: 1,
-            widths: ['*', 'auto', 'auto', 'auto', 'auto'],
-            body: [
-              [
-                { text: 'Item', fillColor: '#4a90e2', color: 'white', margin: [8, 10, 8, 10], alignment: 'left', bold: true },
-                { text: 'Rate', fillColor: '#4a90e2', color: 'white', margin: [8, 10, 8, 10], alignment: 'right', bold: true },
-                { text: 'Quantity', fillColor: '#4a90e2', color: 'white', margin: [8, 10, 8, 10], alignment: 'right', bold: true },
-                { text: 'Discount', fillColor: '#4a90e2', color: 'white', margin: [8, 10, 8, 10], alignment: 'right', bold: true },
-                { text: 'Total', fillColor: '#4a90e2', color: 'white', margin: [8, 10, 8, 10], alignment: 'right', bold: true }
-              ],
-              [
-                { text: bill.product, margin: [8, 8, 8, 8], alignment: 'left' },
-                { text: formatINR(bill.price), margin: [8, 8, 8, 8], alignment: 'right' },
-                { text: bill.qty.toString(), margin: [8, 8, 8, 8], alignment: 'right' },
-                { text: formatINR(bill.discount), margin: [8, 8, 8, 8], alignment: 'right' },
-                { text: formatINR(bill.total), margin: [8, 8, 8, 8], alignment: 'right' }
-              ]
-            ]
-          },
-          layout: {
-            hLineWidth: () => 1,
-            vLineWidth: () => 1,
-            hLineColor: () => '#cccccc',
-            vLineColor: () => '#cccccc',
-            paddingLeft: () => 8,
-            paddingRight: () => 8,
-            paddingTop: () => 6,
-            paddingBottom: () => 6,
-            fillColor: (rowIndex) => (rowIndex % 2 === 0 && rowIndex !== 0) ? '#f3f6fb' : null
-          }
-        },
-        {
-          columns: [
-            { width: '*', text: '' },
-            {
-              stack: [
-                { text: `Subtotal: ${formatINR(bill.qty * bill.price)}`, margin: [0, 3, 0, 3] },
-                { text: `Discount: ${formatINR(bill.discount)}`, margin: [0, 3, 0, 3] },
-                { text: `Total: ${formatINR(bill.total)}`, bold: true, margin: [0, 8, 0, 0] }
-              ],
-              alignment: 'right'
-            }
-          ],
-          margin: [0, 20, 0, 0]
-        },
-        { text: '\nThank You For Purchasing In Our Store.', style: 'terms' }
-      ],
-      styles: {
-        header: { fontSize: 20, bold: true, margin: [0, 0, 0, 20] },
-        subheader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5] },
-        terms: { fontSize: 10, italics: true, margin: [0, 30, 0, 0] }
-      },
-      defaultStyle: { fontSize: 11, lineHeight: 1.2 }
-    };
-
-    pdfMake.createPdf(docDefinition).download(`pro_store.pdf`, () => {
-  resolve();
-});
-
-  });
-}
-
+// Show table with all bills
 function updateTable() {
   const tbody = document.querySelector("#billsTable tbody");
   tbody.innerHTML = "";
@@ -234,6 +139,7 @@ function updateTable() {
   });
 }
 
+// Edit an existing bill
 function editBill(index) {
   const b = bills[index];
   document.getElementById("customerName").value = b.name;
@@ -249,21 +155,68 @@ function editBill(index) {
   btn.textContent = "💾 Save Edited Bill";
 }
 
-function deleteBill(i) {
+// Delete a bill
+function deleteBill(index) {
   if (confirm("Delete this bill?")) {
-    bills.splice(i, 1);
+    bills.splice(index, 1);
     localStorage.setItem("bills", JSON.stringify(bills));
     updateTable();
     updateCustomerSuggestions();
   }
 }
 
-function toggleTable() {
-  const modal = document.getElementById("tableModal");
-  modal.style.display = modal.style.display === "flex" ? "none" : "flex";
-  updateTable();
+// INR currency formatter
+function formatINR(amount) {
+  return `₹${amount.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
 }
 
+// Generate PDF (using pdfMake)
+function generatePDF(bill) {
+  return new Promise((resolve) => {
+    const docDefinition = {
+      content: [
+        { text: 'Pro shop bill', style: 'header', alignment: 'right' },
+        { text: 'Shop Name: PRO SHOP\nAddress: 2/70 Big Street, Zip Code: 631052\nPhone: 789456781', style: 'subheader' },
+        { text: '\nBill To:', style: 'subheader' },
+        `Name: ${bill.name}\nPhone: ${bill.phone}\nAddress: ${bill.address}`,
+        {
+          table: {
+            widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+            body: [
+              ['Item', 'Rate', 'Qty', 'Discount', 'Total'],
+              [bill.product, formatINR(bill.price), bill.qty, formatINR(bill.discount), formatINR(bill.total)]
+            ]
+          },
+          margin: [0, 20, 0, 0]
+        },
+        { text: `Total: ${formatINR(bill.total)}`, alignment: 'right', bold: true, margin: [0, 10, 0, 0] },
+        { text: '\nThank you for shopping with us!', style: 'footer' }
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true },
+        subheader: { fontSize: 12, margin: [0, 10, 0, 5] },
+        footer: { fontSize: 10, italics: true, alignment: 'center', margin: [0, 20, 0, 0] }
+      }
+    };
+    pdfMake.createPdf(docDefinition).download('pro_store.pdf', () => resolve());
+  });
+}
+
+// Auto-fill customer details if they exist
+function autoFillCustomer() {
+  const name = document.getElementById("customerName").value;
+  const match = bills.slice().reverse().find(b => b.name === name);
+  document.getElementById("customerPhone").value = match?.phone || "";
+  document.getElementById("customerAddress").value = match?.address || "";
+  document.getElementById("productName").value = match?.product || "";
+  onProductSelect();
+  document.getElementById("lastPurchaseInfo").textContent = match ? `Last purchase: ${match.product}` : "";
+}
+
+// Show saved customer names in datalist
 function updateCustomerSuggestions() {
   const list = document.getElementById("customerList");
   list.innerHTML = "";
@@ -275,16 +228,7 @@ function updateCustomerSuggestions() {
   });
 }
 
-function autoFillCustomer() {
-  const name = document.getElementById("customerName").value;
-  const match = bills.slice().reverse().find(b => b.name === name);
-  document.getElementById("customerPhone").value = match?.phone || "";
-  document.getElementById("customerAddress").value = match?.address || "";
-  document.getElementById("productName").value = match?.product || "";
-  onProductSelect();
-  document.getElementById("lastPurchaseInfo").textContent = match ? `Last purchase: ${match.product}` : "";
-}
-
+// Clear the form
 function clearForm() {
   document.querySelectorAll("input").forEach(i => i.value = "");
   document.getElementById("productName").value = "";
@@ -293,6 +237,7 @@ function clearForm() {
   btn.textContent = "💾 Generate & Download PDF";
 }
 
+// Load on DOM ready
 window.addEventListener('DOMContentLoaded', () => {
   updateCustomerSuggestions();
   updateTable();
