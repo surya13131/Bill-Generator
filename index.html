@@ -2,253 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pro Bill Generator</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body, input, select, table {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    input, select {
-      display: block;
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-size: 1rem;
-    }
-
-    select {
-      background-color: white;
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 16px;
-      cursor: pointer;
-    }
-
-    #lastPurchaseInfo {
-      font-size: 0.9em;
-      color: gray;
-      margin-top: 4px;
-      min-height: 1.2em;
-    }
-
-    #productList {
-      max-height: 180px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 4px;
-      background: #fff;
-    }
-
-    .product-item {
-      padding: 6px 8px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-      user-select: none;
-    }
-
-    .product-item:last-child {
-      border-bottom: none;
-    }
-
-    .product-item:hover {
-      background: #f1f1f1;
-    }
-
-    #addProductSection {
-      margin: 16px 0;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      display: none;
-      background: #fafafa;
-    }
-
-    footer {
-      background-color: #2c3e50;
-      color: white;
-      text-align: center;
-      padding: 10px 15px;
-      font-size: 0.9rem;
-      margin-top: 40px;
-    }
-
-    footer a {
-      color: #ecf0f1;
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="logo.png" type="image/png" />
+  <title>Login - Jeevitha Enterprises</title>
+  <link rel="stylesheet" href="Login.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-  <div class="floating-btn" onclick="toggleTable()">📋</div>
 
-  <div class="container fade-in">
-    <h1>🧾 Bill Generator</h1>
+  <!-- Header -->
+ <header class="main-header">
+  <div class="header-content">
 
-    <div class="form-section">
-      <h2>Customer Details</h2>
-      <input type="text" id="customerName" placeholder="Name" list="customerList" oninput="autoFillCustomer()" />
-      <datalist id="customerList"></datalist>
-      <div id="lastPurchaseInfo"></div>
-      <input type="text" id="customerPhone" placeholder="Phone" />
-      <input type="text" id="customerAddress" placeholder="Address" />
-    </div>
+    <div class="text-block">
+        <img 
+    src="logo.png" 
+    alt="Logo" 
+    style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #98c7d8;"
+  />
+      <h1 style="
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+      ">Jeevitha Stores</h1>
 
-    <div class="form-section">
-      <h2>Product Details</h2>
-      
-     
-      <select id="productName" onchange="onProductSelect()">
-        <option value="" disabled selected>Choose a product</option>
-      
-      </select>
-
-      <input type="number" id="productQty" placeholder="Quantity" />
-      <input type="number" id="productPrice" placeholder="Price per Unit" />
-      <input type="number" id="productDiscount" placeholder="Discount" />
-<button>💾 Generate & Download Bill</button>
-
-
-
-      <div style="text-align: center; margin-top: 12px;">
-        <button type="button" onclick="toggleAddProduct()">➕ Add Product</button>
-      </div>
-
-   
-      <div id="addProductSection">
-        <input type="text" id="newProductName" placeholder="New Product Name" />
-        <input type="number" id="newProductPrice" placeholder="New Product Price" />
-        <button type="button" onclick="addProduct()">Add to List</button>
-      </div>
-
-
-      <div id="productList" tabindex="0" aria-label="Product List"></div>
+      <p style="
+        font-size: 0.9rem;
+        font-weight: 400;
+        margin: 0;
+        color: #f0f0f0;
+      ">Where Comfort Meets Style</p>
     </div>
   </div>
+</header>
 
-  <div id="tableModal" class="table-modal">
-    <div class="table-container slide-up">
-      <h2>🗂️ Saved Bills</h2>
-      <table id="billsTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Discount</th>
-            <th>Total</th>
-            <th>✏️</th>
-            <th>🗑️</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button onclick="toggleTable()">Close</button>
+  <!-- Login Section -->
+  <section class="login-section">
+    <div class="login-box shadow">
+      <h2 class="text-center mb-4">Login to Your Account</h2>
+
+      <form id="loginForm">
+        <input
+          type="text"
+          id="emailOrPhone"
+          class="form-control mb-3"
+          placeholder="Email or Phone"
+          required
+        />
+        <input
+          type="password"
+          id="password"
+          class="form-control mb-4"
+          placeholder="Password"
+          required
+        />
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+        <div id="errorMsg" class="text-danger mt-3" style="display:none;"></div>
+      </form>
     </div>
-  </div>
+  </section>
 
-  <footer>
-    © 2025 Pro Bill Generator.All Rights are reserved <a href="#">Privacy Policy</a>
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="container text-center py-3 text-white">
+      &copy; 2025 Jeevitha Stores. All rights reserved.
+    </div>
   </footer>
 
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-  <script src="script.js"></script>
-</body>
 <script>
+  // Hardcoded credentials
+  const validUsers = [
+    { emailOrPhone: 'suryasurya20092005@gmail.com', password: '123456' },
+    { emailOrPhone: '6374697959', password: '123456' }
+  ];
 
-  let productData = JSON.parse(sessionStorage.getItem("products")) || [];
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent form submission
 
-  function renderProductDropdown() {
-    const dropdown = document.getElementById("productName");
-    dropdown.innerHTML = '<option value="" disabled selected>Choose a product</option>';
-    productData.forEach(product => {
-      const option = document.createElement("option");
-      option.value = product.name;
-      option.textContent = product.name;
-      dropdown.appendChild(option);
-    });
-  }
+    const inputEmailOrPhone = document.getElementById('emailOrPhone').value.trim();
+    const inputPassword = document.getElementById('password').value;
 
-  function renderProductList() {
-    const productList = document.getElementById("productList");
-    productList.innerHTML = "";
-    productData.forEach(product => {
-      const div = document.createElement("div");
-      div.className = "product-item";
-      div.textContent = `${product.name} - ₹${product.price}`;
-      productList.appendChild(div);
-    });
-  }
+    const userValid = validUsers.some(user =>
+      user.emailOrPhone === inputEmailOrPhone && user.password === inputPassword
+    );
 
-  function addProduct() {
-    const nameInput = document.getElementById("newProductName");
-    const priceInput = document.getElementById("newProductPrice");
+    const errorMsg = document.getElementById('errorMsg');
 
-    const name = nameInput.value.trim();
-    const price = parseFloat(priceInput.value);
-
-    if (!name || isNaN(price)) {
-      alert("Please enter a valid product name and price.");
-      return;
+    if (userValid) {
+      errorMsg.style.display = 'none';
+      // Redirect to home.html
+      window.location.href = 'home.html';
+    } else {
+      errorMsg.style.display = 'block';
+      errorMsg.textContent = 'Invalid email/phone or password. Please try again.';
     }
-
-    const exists = productData.some(p => p.name.toLowerCase() === name.toLowerCase());
-    if (exists) {
-      alert("Product already exists.");
-      return;
-    }
-
-    const newProduct = { name, price };
-    productData.push(newProduct);
-
-  
-    sessionStorage.setItem("products", JSON.stringify(productData));
-
-   
-    renderProductDropdown();
-    renderProductList();
-
-    
-    nameInput.value = "";
-    priceInput.value = "";
-  }
-
-  function onProductSelect() {
-    const selectedName = document.getElementById("productName").value;
-    const product = productData.find(p => p.name === selectedName);
-    if (product) {
-      document.getElementById("productPrice").value = product.price;
-    }
-  }
-
-  function toggleAddProduct() {
-    const section = document.getElementById("addProductSection");
-    section.style.display = section.style.display === "none" ? "block" : "none";
-  }
-
-
-  window.addEventListener("DOMContentLoaded", () => {
-    renderProductDropdown();
-    renderProductList();
   });
 </script>
 
+</body>
 </html>

@@ -1,280 +1,110 @@
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #eef3f8;
+  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
-  padding: 0;
-  color: #34495e;
+  padding: 20px;
+  box-sizing: border-box; /* Add this for consistent box sizing */
+}
+
+*, *::before, *::after {
+  box-sizing: inherit; /* Makes sure padding and borders don't cause overflow */
 }
 
 .container {
-  padding: 2rem;
-  max-width: 700px;
-  margin: 60px auto 40px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  transition: box-shadow 0.3s ease;
+  max-width: 800px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  overflow: hidden; /* Prevent content overflow */
+  border: 1px solid #81d4fa; /* Add border to container */
 }
 
-.container:hover {
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-}
-
-h1, h2 {
+h1 {
   text-align: center;
-  color: #2c3e50;
-  margin-bottom: 1rem;
+  color: #01579b;
+  margin-bottom: 20px; /* add some spacing */
 }
 
-input {
-  width: 100%;
+fieldset {
+  margin-bottom: 15px;
   padding: 10px;
-  margin: 8px 0;
-  border: 1.5px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
+  border: 1px solid #81d4fa;
+  border-radius: 4px;
 }
 
-input:focus {
-  border-color: #2980b9;
-  box-shadow: 0 0 8px #3498dbaa;
-  outline: none;
+legend {
+  font-weight: bold;
+  color: #01579b;
+  padding: 0 5px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.itemRow {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+  flex-wrap: wrap; /* To prevent overflow on small screens */
+}
+
+.itemRow input {
+  flex: 1;
+  padding: 5px;
+  min-width: 100px; /* Avoid inputs being too small */
+  box-sizing: border-box; /* Avoid overflow */
 }
 
 button {
-  background: #3498db;
-  color: #fff;
+  background-color: #0277bd;
+  color: white;
   border: none;
-  padding: 12px 18px;
-  margin-top: 12px;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 8px 12px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 4px 10px rgba(52,152,219,0.3);
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background: #2980b9;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(41,128,185,0.5);
+  background-color: #01579b;
 }
 
-.floating-btn {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background: #27ae60;
-  color: white;
-  padding: 14px 18px;
-  border-radius: 50%;
-  font-size: 1.7rem;
-  cursor: pointer;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.25);
-  z-index: 1000;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+button[type="submit"] {
+  width: 100%;
+  margin-top: 10px;
 }
 
-.floating-btn:hover {
-  background: #219150;
-  transform: scale(1.1);
+/* Add a container for the invoice box if you haven't */
+.invoice-box {
+  border: 1px solid #81d4fa; /* Add border */
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 6px;
+  max-width: 100%; /* keep it within parent */
+  overflow-wrap: break-word; /* break long words to avoid overflow */
 }
 
-.table-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.5);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.table-container {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: slideUp 0.4s ease;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-
-table {
+/* If you are using tables in invoice */
+.invoice-box table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-  border-radius: 8px;
-  overflow: hidden;
 }
 
-th {
-  background-color: #2980b9;
-  color: white;
-  font-weight: 700;
-  font-size: 1.1rem;
-  padding: 12px 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: 1px solid #1c5980;
-  user-select: none;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15);
-}
-
-td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  text-align: center;
-  background: #fdfdfd;
-  transition: background-color 0.25s ease;
-}
-
-tr:hover td {
-  background-color: #f1f8ff;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(40px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@media (max-width: 1024px) {
-  .container {
-    max-width: 90%;
-    padding: 1.5rem;
-  }
-
-  input,
-  button {
-    font-size: 0.95rem;
-  }
-
-  table th,
-  table td {
-    font-size: 0.95rem;
-    padding: 10px;
-  }
-}
-
-@media (max-width: 768px) {
-  .container {
-    max-width: 95%;
-    padding: 1.2rem;
-    margin: 40px auto 30px;
-  }
-
-  th,
-  td {
-    font-size: 0.9rem;
-    padding: 8px 10px;
-  }
-
-  button {
-    font-size: 0.9rem;
-    padding: 10px 14px;
-  }
-
-  .floating-btn {
-    font-size: 1.4rem;
-    padding: 10px 14px;
-  }
-
-  .table-container {
-    padding: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    max-width: 98%;
-    padding: 1rem;
-    margin: 30px auto 20px;
-  }
-
-  h1,
-  h2 {
-    font-size: 1.4rem;
-  }
-
-  input {
-    font-size: 0.95rem;
-    padding: 8px;
-  }
-
-  button {
-    font-size: 0.85rem;
-    padding: 9px 12px;
-  }
-
-  th,
-  td {
-    font-size: 0.8rem;
-    padding: 6px;
-  }
-
-  .table-container {
-    width: 95%;
-    padding: 15px;
-  }
-
-  .floating-btn {
-    font-size: 1.3rem;
-    padding: 10px 12px;
-    top: 15px;
-    left: 15px;
-  }
-}
-
-#productList {
-  max-height: 180px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  margin-top: 8px;
+.invoice-box table, 
+.invoice-box th, 
+.invoice-box td {
+  border: 1px solid #81d4fa;
   padding: 8px;
-  border-radius: 4px;
-  background: #fff;
+  text-align: left;
 }
 
-.product-item {
-  padding: 6px 8px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-  user-select: none;
-}
-
-.product-item:last-child {
-  border-bottom: none;
-}
-
-.product-item:hover {
-  background: #f1f1f1;
-}
-
-#productList .product-item:last-child {
-  display: none !important;
-}
-
-#addProductSection {
-  margin: 16px 0;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  display: none;
-  background: #fafafa;
+/* Responsive fix */
+@media (max-width: 600px) {
+  .itemRow {
+    flex-direction: column;
+  }
 }

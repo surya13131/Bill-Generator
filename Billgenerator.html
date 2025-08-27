@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="icon" href="logo.png" type="image/png" />
+
+  <title>Invoice Generator — Jeevitha Enterprises</title>
+
+  <!-- PDFMake and to-words CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/to-words/dist/to-words.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+  <style>
+    /* Reset and base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 10px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0277bd;
+      margin-bottom: 30px;
+      font-weight: 700;
+      font-size: 1.9rem;
+    }
+
+    form fieldset {
+      border: 1px solid #ddd;
+      padding: 20px 25px;
+      margin-bottom: 25px;
+      border-radius: 8px;
+    }
+
+    form legend {
+      font-weight: 700;
+      color: #0288d1;
+      padding: 0 10px;
+      font-size: 1.1rem;
+    }
+
+    /* Label container - flex for desktop, stacked on mobile */
+    label {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px 30px;
+      align-items: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #444;
+      width: 100%;
+    }
+
+    /* Label text span */
+    label > span {
+      flex: 0 0 auto;
+      min-width: 70px;
+      font-weight: 600;
+    }
+
+    /* Inputs flex-grow to fill available space */
+    label input[type="text"],
+    label input[type="number"] {
+      flex: 1 1 200px;
+      min-width: 150px;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      transition: border-color 0.3s ease;
+      max-width: 100%;
+    }
+
+    label input[type="text"]:focus,
+    label input[type="number"]:focus {
+      outline: none;
+      border-color: #0277bd;
+      box-shadow: 0 0 5px #8ac4ff;
+    }
+
+    /* Items container */
+    #itemsContainer .itemRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    #itemsContainer .itemRow input {
+      flex: 1 1 120px;
+      min-width: 100px;
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+      max-width: 100%;
+    }
+
+    #itemsContainer .itemRow input:focus {
+      outline: none;
+      border-color: #0277bd;
+      box-shadow: 0 0 5px #8ac4ff;
+    }
+
+    #itemsContainer .itemRow button.removeItemBtn {
+      background: #e53935;
+      border: none;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+      line-height: 1;
+      border-radius: 5px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      align-self: flex-start;
+    }
+
+    #itemsContainer .itemRow button.removeItemBtn:hover {
+      background: #ab000d;
+    }
+
+    #addItemBtn {
+      background-color: #0277bd;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+      margin-top: 10px;
+      display: inline-block;
+    }
+
+    #addItemBtn:hover {
+      background-color: #01579b;
+    }
+
+    button[type="submit"] {
+      background-color: #0288d1;
+      border: none;
+      color: white;
+      padding: 14px 25px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+      display: block;
+      margin: 30px auto 0 auto;
+      font-weight: 700;
+      width: 100%;
+      max-width: 300px;
+      transition: background-color 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #0277bd;
+    }
+
+    /* Copy type checkboxes inline */
+    fieldset:last-of-type label {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 25px;
+      font-weight: normal;
+      cursor: pointer;
+      font-size: 14px;
+      gap: 6px;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 1024px) {
+      .container {
+        padding: 20px;
+        max-width: 95%;
+      }
+      label input[type="text"],
+      label input[type="number"] {
+        flex-basis: 180px;
+        min-width: 130px;
+      }
+      #itemsContainer .itemRow input {
+        flex-basis: 100px;
+        min-width: 80px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      label {
+        flex-direction: column;
+        align-items: stretch;
+        font-size: 13px;
+      }
+      label > span {
+        min-width: auto;
+        margin-bottom: 5px;
+      }
+      label input[type="text"],
+      label input[type="number"] {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+      }
+      #itemsContainer .itemRow {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #itemsContainer .itemRow input {
+        flex: none;
+        width: 100%;
+        min-width: auto;
+      }
+      #itemsContainer .itemRow button.removeItemBtn {
+        align-self: flex-end;
+        margin-top: 8px;
+      }
+      button[type="submit"] {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 15px 10px;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 20px;
+      }
+      form fieldset {
+        padding: 15px 20px;
+      }
+      label {
+        margin-bottom: 12px;
+      }
+      #addItemBtn {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+      button[type="submit"] {
+        font-size: 16px;
+        padding: 12px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Jeevitha Enterprises — Invoice Generator</h1>
+
+    <form id="invoiceForm" autocomplete="off">
+      <fieldset>
+        <legend>Receiver (Billed To)</legend>
+
+        <label>
+          <span>Name:</span>
+          <input type="text" name="billName" required placeholder="Enter receiver name" />
+          <span>Address:</span>
+          <input type="text" name="billAddress" required placeholder="Enter address" />
+        </label>
+
+        <label>
+          <span>State:</span>
+          <input type="text" name="billState" placeholder="State" />
+          <span>Code:</span>
+          <input type="text" name="billCode" placeholder="Pin Code" />
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Consignee (Shipped To) — Optional</legend>
+
+        <label>
+          <span>Name:</span>
+          <input type="text" name="shipName" placeholder="Consignee name" />
+          <span>Address:</span>
+          <input type="text" name="shipAddress" placeholder="Consignee address" />
+        </label>
+
+        <label>
+          <span>State:</span>
+          <input type="text" name="shipState" placeholder="State" />
+          <span>Code:</span>
+          <input type="text" name="shipCode" placeholder="Pin Code" />
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Items</legend>
+        <div id="itemsContainer">
+          <div class="itemRow">
+            <input type="text" name="prodName[]" placeholder="Product" required />
+            <input type="text" name="hsn[]" placeholder="HSN/SAC" />
+            <input type="number" name="qty[]" placeholder="Qty" min="0" step="1" required />
+            <input type="text" name="unit[]" placeholder="Unit" />
+            <input type="number" name="rate[]" placeholder="Rate" min="0" step="0.01" required />
+          </div>
+        </div>
+        <button type="button" id="addItemBtn">+ Add Item</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Extras</legend>
+
+        <label>
+          <span>Reverse Charge:</span>
+          <input type="text" name="reverseCharge" placeholder="Yes/No" />
+          <span>Challan No.:</span>
+          <input type="text" name="challanNo" />
+        </label>
+
+        <label>
+          <span>Vehicle No.:</span>
+          <input type="text" name="vehicleNo" />
+          <span>Place of Supply:</span>
+          <input type="text" name="placeSupply" />
+        </label>
+
+      </fieldset>
+
+      <fieldset>
+        <legend>Copy Type</legend>
+        <label><input type="checkbox" name="copyType[]" value="Original for Recipient" /> Original</label>
+        <label><input type="checkbox" name="copyType[]" value="Duplicate for Transport" /> Duplicate</label>
+        <label><input type="checkbox" name="copyType[]" value="Triplicate for Supplier" /> Triplicate</label>
+      </fieldset>
+
+      <button type="submit">Generate PDF</button>
+
+    </form>
+  </div>
+  <script src="script.js"></script>
+<script>
+  // Number to words (already defined)
+
+  // Allow arrow keys on number inputs
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      const allowedKeys = ['ArrowUp', 'ArrowDown', 'Backspace', 'Tab', 'Delete', 'Enter', 'ArrowLeft', 'ArrowRight'];
+      if (allowedKeys.includes(e.key)) {
+        return;
+      }
+    });
+  });
+
+  // Add item button
+  const addItemBtn = document.getElementById('addItemBtn');
+  const itemsContainer = document.getElementById('itemsContainer');
+
+  addItemBtn.addEventListener('click', () => {
+    const newItem = document.createElement('div');
+    newItem.classList.add('itemRow');
+    newItem.innerHTML = `
+      <input type="text" name="prodName[]" placeholder="Product" required />
+      <input type="text" name="hsn[]" placeholder="HSN/SAC" />
+      <input type="number" name="qty[]" placeholder="Qty" min="0" step="1" required />
+      <input type="text" name="unit[]" placeholder="Unit" />
+      <input type="number" name="rate[]" placeholder="Rate" min="0" step="0.01" required />
+      <button type="button" class="removeItemBtn" title="Remove Item">&times;</button>
+    `;
+    itemsContainer.appendChild(newItem);
+
+    newItem.querySelector('.removeItemBtn').addEventListener('click', () => {
+      newItem.remove();
+    });
+  });
+
+  // Form submit logic
+  document.getElementById('invoiceForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const qtys = [...document.getElementsByName('qty[]')].map(i => parseFloat(i.value));
+    const rates = [...document.getElementsByName('rate[]')].map(i => parseFloat(i.value));
+
+    let grandTotal = 0;
+    for (let i = 0; i < qtys.length; i++) {
+      if (!isNaN(qtys[i]) && !isNaN(rates[i])) {
+        grandTotal += qtys[i] * rates[i];
+      }
+    }
+
+    const amountInWords = numberToWords(grandTotal);
+
+    alert(`Total: ₹${grandTotal.toFixed(2)}\nIn words: ${amountInWords}`);
+
+    // TODO: Add PDF generation with pdfMake here
+  });
+</script>
+
+</body>
+</html>

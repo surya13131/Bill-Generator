@@ -1,250 +1,358 @@
-// Load bills and products from localStorage
-let bills = JSON.parse(localStorage.getItem("bills") || "[]");
-let productListArr = JSON.parse(localStorage.getItem("products") || "[]");
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+  e.preventDefault();
 
-// Ensure product list persists even after refresh
-if (!Array.isArray(productListArr)) productListArr = [];
-if (!Array.isArray(bills)) bills = [];
+  // Number to words function (Indian Numbering System)
+  function numberToWords(num) {
+    const a = [
+      '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven',
+      'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+    ];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
 
-const btn = document.querySelector("button[onclick='addBill()']") || document.getElementById("addBillBtn") || document.querySelector("button");
-let currentEditIndex = null;
+    if ((num = num.toString()).length > 9) return 'Overflow';
+    const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return;
 
-// Toggle Add Product Section
-function toggleAddProduct() {
-  const sec = document.getElementById('addProductSection');
-  sec.style.display = sec.style.display === 'none' || !sec.style.display ? 'block' : 'none';
-}
-
-// Add Product to localStorage
-function addProduct() {
-  const name = document.getElementById('newProductName').value.trim();
-  const price = parseFloat(document.getElementById('newProductPrice').value);
-
-  if (!name || isNaN(price)) {
-    alert('Enter valid product name & price');
-    return;
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || (b[n[1][0]] + ' ' + a[n[1][1]])) + ' Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || (b[n[2][0]] + ' ' + a[n[2][1]])) + ' Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || (b[n[3][0]] + ' ' + a[n[3][1]])) + ' Thousand ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || (b[n[4][0]] + ' ' + a[n[4][1]])) + ' Hundred ' : '';
+    str += (n[5] != 0) ? ((str !== '' ? 'and ' : '') + (a[Number(n[5])] || (b[n[5][0]] + ' ' + a[n[5][1]]))) + ' ' : '';
+    return str.trim() + ' Rupees Only';
   }
 
-  const existingProduct = productListArr.find(p => p.name.toLowerCase() === name.toLowerCase());
-  if (existingProduct) {
-    existingProduct.price = price;
-    alert('Product price updated');
-  } else {
-    productListArr.push({ name, price });
-    alert('New product added');
+  const form = new FormData(this);
+
+  // **Get all checked copyType checkbox values**
+  const checkedCopies = form.getAll('copyType[]');
+
+  const now = new Date();
+
+  const invoiceNo = `INV${now.getFullYear()}${('0' + (now.getMonth() + 1)).slice(-2)}${('0' + now.getDate()).slice(-2)}${('0' + now.getHours()).slice(-2)}${('0' + now.getMinutes()).slice(-2)}`;
+  const dateStr = now.toLocaleDateString('en-IN');
+
+  // Gather billed to data
+  const billed = {
+    name: form.get('billName') || '',
+    address: form.get('billAddress') || '',
+ gstin: '33DBQPR7500Q2ZV',
+    state: form.get('billState') || '',
+    code: form.get('billCode') || ''
+  };
+
+  // Gather shipped to data
+  const shipped = {
+    name: form.get('shipName') || '',
+    address: form.get('shipAddress') || '',
+  gstin: '33DBQPR7500Q2ZV',
+    state: form.get('shipState') || '',
+    code: form.get('shipCode') || ''
+  };
+
+  // Additional fields
+  const extras = {
+    reverse: form.get('reverseCharge') || '',
+    challan: form.get('challanNo') || '',
+    vehicle: form.get('vehicleNo') || '',
+    place: form.get('placeSupply') || ''
+  };
+
+  // Get arrays for products
+  const names = form.getAll('prodName[]');
+  const hsns = form.getAll('hsn[]');
+  const qtys = form.getAll('qty[]');
+  const units = form.getAll('unit[]');
+  const rates = form.getAll('rate[]');
+
+  const rows = [];
+  let taxableSum = 0;
+
+  for (let i = 0; i < names.length; i++) {
+    const qty = parseFloat(qtys[i]) || 0;
+    const rate = parseFloat(rates[i]) || 0;
+    const total = qty * rate;
+    taxableSum += total;
+
+    rows.push([
+      i + 1,
+      names[i] || '',
+      hsns[i] || '',
+      qty || 0,
+      units[i] || '',
+      rate.toFixed(2),
+      total.toFixed(2)
+    ]);
   }
 
-  localStorage.setItem("products", JSON.stringify(productListArr));
-  document.getElementById('newProductName').value = '';
-  document.getElementById('newProductPrice').value = '';
-  renderProductList();
-  populateProductSelect();
-  toggleAddProduct();
-}
+  const cgstAmount = taxableSum * 0.09;
+  const sgstAmount = taxableSum * 0.09;
+  const totalGST = cgstAmount + sgstAmount;
+  const grandTotal = taxableSum + totalGST;
 
-// Render product list on UI
-function renderProductList() {
-  const listEl = document.getElementById('productList');
-  if (!listEl) return;
-  listEl.innerHTML = '';
-  productListArr.forEach(prod => {
-    const div = document.createElement('div');
-    div.className = 'product-item';
-    div.textContent = `${prod.name} — ₹${prod.price.toFixed(2)}`;
-    div.onclick = () => {
-      const select = document.getElementById('productName');
-      select.value = prod.name;
-      onProductSelect();
-      document.getElementById('productQty').focus();
+  // Helper for small box with code
+  function smallBox(text) {
+    return {
+      stack: [{ text: text, fontSize: 8, alignment: 'center', margin: [0, 2, 0, 2] }],
+      margin: [2, 0, 0, 0],
+      border: [true, true, true, true],
+      width: 25,
+      height: 15,
+      alignment: 'center'
     };
-    listEl.appendChild(div);
-  });
-}
-
-// Fill product dropdown
-function populateProductSelect() {
-  const select = document.getElementById('productName');
-  if (!select) return;
-  const currentValue = select.value;
-  select.innerHTML = '<option value="" disabled selected>Choose a product</option>';
-  productListArr.forEach(prod => {
-    const option = document.createElement('option');
-    option.value = prod.name;
-    option.textContent = prod.name;
-    select.appendChild(option);
-  });
-  if (productListArr.some(p => p.name === currentValue)) {
-    select.value = currentValue;
-  }
-}
-
-// When product is selected, fill price
-function onProductSelect() {
-  const select = document.getElementById('productName');
-  const selectedName = select.value;
-  const product = productListArr.find(p => p.name === selectedName);
-  document.getElementById('productPrice').value = product ? product.price : '';
-}
-
-// Button click to generate/save bill
-btn.addEventListener("click", async () => {
-  btn.disabled = true;
-  btn.textContent = currentEditIndex === null ? "⏳ Generating..." : "⏳ Saving...";
-  await addBill(currentEditIndex);
-  btn.disabled = false;
-  btn.textContent = "💾 Generate & Download PDF";
-});
-
-// Add bill logic
-async function addBill(editIndex = null) {
-  const name = document.getElementById("customerName").value.trim();
-  const phone = document.getElementById("customerPhone").value.trim();
-  const address = document.getElementById("customerAddress").value.trim();
-  const product = document.getElementById("productName").value.trim();
-  const qty = parseInt(document.getElementById("productQty").value);
-  const price = parseFloat(document.getElementById("productPrice").value);
-  const discount = parseFloat(document.getElementById("productDiscount").value) || 0;
-  const total = (qty * price) - discount;
-
-  if (!name || !product || isNaN(qty) || isNaN(price)) {
-    alert("Please fill all required fields with valid values.");
-    return;
   }
 
-  const bill = { name, phone, address, product, qty, price, discount, total };
-  if (editIndex !== null) bills[editIndex] = bill;
-  else bills.push(bill);
+  // Layout with full borders (all horizontal & vertical lines)
+  const fullBorderLayout = {
+    hLineWidth: () => 1,
+    vLineWidth: () => 1,
+    hLineColor: () => 'black',
+    vLineColor: () => 'black',
+    paddingLeft: () => 4,
+    paddingRight: () => 4,
+    paddingTop: () => 2,
+    paddingBottom: () => 2,
+  };
 
-  localStorage.setItem("bills", JSON.stringify(bills));
-  updateTable();
-  updateCustomerSuggestions();
-  await generatePDF(bill);
-  clearForm();
-  currentEditIndex = null;
-}
 
-// Show table with all bills
-function updateTable() {
-  const tbody = document.querySelector("#billsTable tbody");
-  tbody.innerHTML = "";
-  bills.forEach((b, i) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${b.name}</td><td>${b.phone}</td><td>${b.product}</td>
-      <td>${b.qty}</td><td>${formatINR(b.price)}</td>
-      <td>${formatINR(b.discount)}</td><td>${formatINR(b.total)}</td>
-      <td><button onclick="editBill(${i})">✏️</button></td>
-      <td><button onclick="deleteBill(${i})">🗑️</button></td>`;
-    tbody.appendChild(row);
-  });
-}
 
-// Edit an existing bill
-function editBill(index) {
-  const b = bills[index];
-  document.getElementById("customerName").value = b.name;
-  document.getElementById("customerPhone").value = b.phone;
-  document.getElementById("customerAddress").value = b.address;
-  document.getElementById("productName").value = b.product;
-  onProductSelect();
-  document.getElementById("productQty").value = b.qty;
-  document.getElementById("productPrice").value = b.price;
-  document.getElementById("productDiscount").value = b.discount;
+  const doc = {
+    pageMargins: [40, 40, 40, 40],
+    content: [
+      {
+        text: 'JEEVITHA ENTERPRISES',
+        style: 'header',
+        alignment: 'center',
+        color: '#0277bd',
+        margin: [0, 0, 0, 6]
+      },
+      {
+        text: 'S.No.255/2, Dusi Village & Post, Vembakkam, TK, T.V.Malai Dist - 631 702.\nGSTIN : 33BDXPS0279G2ZY',
+        alignment: 'center',
+        margin: [0, 0, 0, 10],
+        color: '#0288d1',
+        fontSize: 9
+      },
+      { text: 'TAX INVOICE', style: 'title', alignment: 'center', margin: [0, 0, 0, 20], color: '#01579b' },
 
-  currentEditIndex = index;
-  btn.textContent = "💾 Save Edited Bill";
-}
+      // **Display Copy Type here**
+      {
+        text: 'Copy Type: ' + (checkedCopies.length ? checkedCopies.join(', ') : 'None'),
+        margin: [0, 0, 0, 10],
+        bold: true,
+        fontSize: 10,
+        color: '#000'
+      },
 
-// Delete a bill
-function deleteBill(index) {
-  if (confirm("Delete this bill?")) {
-    bills.splice(index, 1);
-    localStorage.setItem("bills", JSON.stringify(bills));
-    updateTable();
-    updateCustomerSuggestions();
-  }
-}
-
-// INR currency formatter
-function formatINR(amount) {
-  return `₹${amount.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`;
-}
-
-// Generate PDF (using pdfMake)
-function generatePDF(bill) {
-  return new Promise((resolve) => {
-    const docDefinition = {
-      content: [
-        { text: 'Pro shop bill', style: 'header', alignment: 'right' },
-        { text: 'Shop Name: PRO SHOP\nAddress: 2/70 Big Street, Zip Code: 631052\nPhone: 789456781', style: 'subheader' },
-        { text: '\nBill To:', style: 'subheader' },
-        `Name: ${bill.name}\nPhone: ${bill.phone}\nAddress: ${bill.address}`,
-        {
-          table: {
-            widths: ['*', 'auto', 'auto', 'auto', 'auto'],
-            body: [
-              ['Item', 'Rate', 'Qty', 'Discount', 'Total'],
-              [bill.product, formatINR(bill.price), bill.qty, formatINR(bill.discount), formatINR(bill.total)]
-            ]
+      // Top details (invoice info)
+      {
+        columns: [
+          {
+            width: '50%',
+            table: {
+              widths: ['40%', '60%'],
+              body: [
+                [{ text: 'Reverse Charge', bold: true, fillColor: '#bbdefb', fontSize: 9 }, extras.reverse || ''],
+                [{ text: 'Challan No.', bold: true, fillColor: '#bbdefb', fontSize: 9 }, extras.challan || ''],
+                [{ text: 'Invoice No.', bold: true, fillColor: '#bbdefb', fontSize: 9 }, invoiceNo],
+                [{ text: 'Invoice Date', bold: true, fillColor: '#bbdefb', fontSize: 9 }, dateStr],
+                [{ text: 'State', bold: true, fillColor: '#bbdefb', fontSize: 9 }, billed.state]
+              ]
+            },
+            layout: fullBorderLayout
           },
-          margin: [0, 20, 0, 0]
+          {
+            width: '50%',
+            table: {
+              widths: ['50%', '50%'],
+              body: [
+                [{ text: 'Challan No.', bold: true, fillColor: '#bbdefb', fontSize: 9 }, { text: extras.challan || '', alignment: 'right' }],
+                [{ text: 'Vehicle No.', bold: true, fillColor: '#bbdefb', fontSize: 9 }, extras.vehicle || ''],
+                [{ text: 'Date of Supply', bold: true, fillColor: '#bbdefb', fontSize: 9 }, dateStr],
+                [{ text: 'Place of Supply', bold: true, fillColor: '#bbdefb', fontSize: 9 }, extras.place || '']
+              ]
+            },
+            layout: fullBorderLayout
+          }
+        ],
+        columnGap: 10,
+        margin: [0, 10, 0, 10]
+      },
+
+      // Billing + Shipping details
+      {
+        columns: [
+          {
+            width: '50%',
+            table: {
+              widths: ['*', 40],
+              body: [
+                [
+                  {
+                    stack: [
+                      { text: 'Details of Receiver / Billed to:', bold: true, fillColor: '#bbdefb', fontSize: 10, margin: [0, 0, 0, 4] },
+                      { text: billed.name }, { text: billed.address }, { text: 'GSTIN: ' + billed.gstin }
+                    ],
+                    margin: [4, 0, 0, 0]
+                  },
+                  smallBox(billed.code)
+                ],
+                [{ text: 'State:', bold: true, fontSize: 9, margin: [4, 4, 0, 0] }, smallBox(billed.state)]
+              ]
+            },
+            layout: fullBorderLayout
+          },
+          {
+            width: '50%',
+            table: {
+              widths: ['*', 40],
+              body: [
+                [
+                  {
+                    stack: [
+                      { text: 'Details of Consignee / Shipped to:', bold: true, fillColor: '#bbdefb', fontSize: 10, margin: [0, 0, 0, 4] },
+                      { text: shipped.name }, { text: shipped.address }, { text: 'GSTIN: ' + shipped.gstin }
+                    ],
+                    margin: [4, 0, 0, 0]
+                  },
+                  smallBox(shipped.code)
+                ],
+                [{ text: 'State:', bold: true, fontSize: 9, margin: [4, 4, 0, 0] }, smallBox(shipped.state)]
+              ]
+            },
+            layout: fullBorderLayout
+          }
+        ],
+        columnGap: 10,
+        margin: [0, 10, 0, 10]
+      },
+
+      // Products Table
+      {
+        table: {
+          headerRows: 1,
+          widths: ['6%', 'auto', '10%', '6%', '6%', '10%', '12%', '12%', '12%', '12%'],
+          body: [
+            [
+              { text: 'Sr.', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'Name of product', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'HSN/SAC', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'QTY', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'Unit', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'Rate', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'Taxable Value', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'CGST (9%)', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'SGST (9%)', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' },
+              { text: 'Total', bold: true, fillColor: '#bbdefb', fontSize: 8, alignment: 'center' }
+            ],
+            ...rows.map((r) => {
+              const taxable = parseFloat(r[6]) || 0;
+              return [
+                { text: r[0], alignment: 'center' },
+                { text: r[1] },
+                { text: r[2], alignment: 'center' },
+                { text: r[3], alignment: 'center' },
+                { text: r[4], alignment: 'center' },
+                { text: `₹${parseFloat(r[5]).toFixed(2)}`, alignment: 'right' },
+                { text: `₹${taxable.toFixed(2)}`, alignment: 'right', fillColor: '#e3f2fd' },
+                { text: `₹${(taxable * 0.09).toFixed(2)}`, alignment: 'right', fillColor: '#e3f2fd' },
+                { text: `₹${(taxable * 0.09).toFixed(2)}`, alignment: 'right', fillColor: '#e3f2fd' },
+                { text: `₹${(taxable + taxable * 0.18).toFixed(2)}`, alignment: 'right' }
+              ];
+            })
+          ]
         },
-        { text: `Total: ${formatINR(bill.total)}`, alignment: 'right', bold: true, margin: [0, 10, 0, 0] },
-        { text: '\nThank you for shopping with us!', style: 'footer' }
-      ],
-      styles: {
-        header: { fontSize: 18, bold: true },
-        subheader: { fontSize: 12, margin: [0, 10, 0, 5] },
-        footer: { fontSize: 10, italics: true, alignment: 'center', margin: [0, 20, 0, 0] }
+        layout: fullBorderLayout,
+        margin: [0, 10, 0, 20]
+      },
+
+      // Invoice Amount Summary
+      {
+        table: {
+          widths: ['60%', '40%'],
+          body: [[
+            { text: `Total Invoice Amount`, italics: true, fillColor: '#e3f2fd', margin: [4, 8, 0, 8] },
+            {
+              table: {
+                widths: ['60%', '40%'],
+                body: [
+                  ['Total Amount Before Tax', { text: `₹${taxableSum.toFixed(2)}`, alignment: 'right' }],
+                  ['Add : CGST', { text: `₹${cgstAmount.toFixed(2)}`, alignment: 'right' }],
+                  ['Add : SGST', { text: `₹${sgstAmount.toFixed(2)}`, alignment: 'right' }],
+                  ['Tax Amount : GST', { text: `₹${totalGST.toFixed(2)}`, alignment: 'right' }],
+                  ['Round Off Value', { text: '', alignment: 'right' }],
+                  ['Amount With Tax', { text: `₹${grandTotal.toFixed(2)}`, alignment: 'right', bold: true }]
+                ]
+              },
+              layout: fullBorderLayout
+            }
+          ]]
+        },
+        margin: [0, 0, 0, 15]
+      },
+
+      // Amount in Words Display
+      {
+        text: 'Total Amount in Words: ' + numberToWords(Math.round(grandTotal)),
+        margin: [0, 0, 0, 20],
+        color: '#01579b',
+        bold: true
+      },
+
+      // Terms & Conditions
+      {
+        text: 'Terms & Conditions:',
+        bold: true,
+        fontSize: 9,
+        margin: [0, 0, 0, 4]
+      },
+      {
+        ul: [
+          ' 1. This is an electronically generated document. ',
+          '2. All disputes are subject to Kancheepuram jurisdiction'
+        ],
+        fontSize: 8
+      },
+
+      // Signature block
+      {
+        columns: [
+          { width: '60%', text: '' },
+          {
+            width: '40%',
+            stack: [
+  {
+    text: 'Certified that the particulars given above are true and correct',
+    alignment: 'center',
+    margin: [0, 20, 0, 10],
+    fontSize: 9
+  },
+  {
+    text: 'For Jeevitha Enterprises',
+    alignment: 'center',
+    margin: [0, 10, 0, 30],
+    fontSize: 10,
+    bold: true
+  },
+  {
+    text: 'Authorised Signatory',
+    alignment: 'center',
+    fontSize: 9
+  }
+]
+
+          }
+        ]
       }
-    };
-    pdfMake.createPdf(docDefinition).download('pro_store.pdf', () => resolve());
-  });
-}
+    ],
+    styles: {
+      header: { fontSize: 16, bold: true },
+      title: { fontSize: 14, bold: true }
+    },
+    defaultStyle: {
+      fontSize: 10
+    }
+  };
 
-// Auto-fill customer details if they exist
-function autoFillCustomer() {
-  const name = document.getElementById("customerName").value;
-  const match = bills.slice().reverse().find(b => b.name === name);
-  document.getElementById("customerPhone").value = match?.phone || "";
-  document.getElementById("customerAddress").value = match?.address || "";
-  document.getElementById("productName").value = match?.product || "";
-  onProductSelect();
-  document.getElementById("lastPurchaseInfo").textContent = match ? `Last purchase: ${match.product}` : "";
-}
-
-// Show saved customer names in datalist
-function updateCustomerSuggestions() {
-  const list = document.getElementById("customerList");
-  list.innerHTML = "";
-  const names = [...new Set(bills.map(b => b.name))];
-  names.forEach(name => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    list.appendChild(opt);
-  });
-}
-
-// Clear the form
-function clearForm() {
-  document.querySelectorAll("input").forEach(i => i.value = "");
-  document.getElementById("productName").value = "";
-  document.getElementById("lastPurchaseInfo").textContent = "";
-  currentEditIndex = null;
-  btn.textContent = "💾 Generate & Download PDF";
-}
-
-// Load on DOM ready
-window.addEventListener('DOMContentLoaded', () => {
-  updateCustomerSuggestions();
-  updateTable();
-  clearForm();
-  renderProductList();
-  populateProductSelect();
-
-  document.getElementById('productName').addEventListener('change', onProductSelect);
-  document.getElementById('customerName').addEventListener('input', autoFillCustomer);
+  pdfMake.createPdf(doc).download(`Invoice_${invoiceNo}.pdf`);
 });
